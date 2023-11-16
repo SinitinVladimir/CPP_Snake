@@ -30,7 +30,7 @@ bool ElementInDeque(Vector2 element, deque<Vector2> deque)
                          // This indicates that the element is already present in the deque.
         }
     }
-    return false; // If the loop completes without finding the element, return false.
+    return false; // If the loop completes without finding the element, return fal  se.
                   // This indicates that the element is not present in the deque.
 }
 
@@ -50,6 +50,8 @@ class Snake {
     public:
         deque<Vector2> body = {Vector2{6,9}, Vector2{5,9}, Vector2{4,9}}; // Initializes the snake's body as a deque of Vector2 positions
         Vector2 direction = {1, 0};   // the initial direction of the snake
+        bool addSegment = false; // Growing the snake
+
 
     void Draw() {
         for(long unsigned int i = 0; i < body.size(); i++) // Iterates through each segment of the snake's body
@@ -63,8 +65,20 @@ class Snake {
 
     void Update()
     {
+            body.push_front(Vector2Add(body[0], direction)); // Adds a new segment at the front in the current direction
+        if(addSegment == true)
+        {
+            addSegment = false;
+        }else
+        {
         body.pop_back(); // Removes the last segment of the body
-        body.push_front(Vector2Add(body[0], direction)); // Adds a new segment at the front in the current direction
+        }
+    }
+
+    void Reset()
+    {
+        body = {Vector2{6,9}, Vector2{5,9}, Vector2{4,9}}; // Initializes the snake's body as a deque of Vector2 positions
+        Vector2 direction = {1, 0};   // the initial direction of the snake
     }
 };
 
@@ -127,6 +141,7 @@ class Game
 public:
     Snake snake = Snake(); // Creates an instance of the Snake class
     Food food = Food(snake.body);    // Creates an instance of the Food class
+    bool running = true; //
 
     void Draw()
     {
@@ -136,8 +151,13 @@ public:
 
     void Update()
     {
-        snake.Update();    // Updates the state of the snake
-        CheckCollisionWithFood(); // Checks if the snake is colliding with the food
+        if (running)
+        {
+            snake.Update();    // Updates the state of the snake
+            CheckCollisionWithFood(); // Checks if the snake is colliding with the food
+            CheckCollisionWithEdges();
+            CheckCollisionWithTail();
+        }
     }    
 
     void CheckCollisionWithFood()
@@ -145,6 +165,36 @@ public:
         if(Vector2Equals(snake.body[0], food.position)) // Checks for collision between the snake's head and the food
         {
             food.position = food.GenerateRandomPos(snake.body); // Generates a new position for the food
+            snake.addSegment = true; // Snake grows its position at the frot
+        }
+    }
+
+    void CheckCollisionWithEdges()
+    {
+        if(snake.body[0].x == cellCount || snake.body[0].x == -1)
+        {
+            GameOver();
+        }
+        if(snake.body[0].y == cellCount || snake.body[0].y == -1)
+        {
+            GameOver();
+        }
+    }
+
+    void GameOver()
+    {
+        snake.Reset();
+        food.position = food.GenerateRandomPos(snake.body);
+        running = false;
+    }
+
+    void CheckCollisionWithTail()
+    {
+        deque<Vector2> headlessBody = snake.body;
+        headlessBody.pop_front();
+        if(ElementInDeque(snake.body[0], headlessBody))
+        {
+            GameOver();
         }
     }
 };
@@ -170,21 +220,25 @@ int main()
         if (IsKeyPressed(KEY_UP) && game.snake.direction.y != 1)
         {
             game.snake.direction = {0, -1};
+            game.running = true;
         }
 
         if (IsKeyPressed(KEY_DOWN) && game.snake.direction.y != -1)
         {
             game.snake.direction = {0, 1};
+            game.running = true;
         }
 
         if (IsKeyPressed(KEY_LEFT) && game.snake.direction.x != 1)
         {
             game.snake.direction = {-1, 0};
+            game.running = true;
         }
 
         if (IsKeyPressed(KEY_RIGHT) && game.snake.direction.x != -1)
         {
             game.snake.direction = {1, 0};
+            game.running = true;
         }
 
         ClearBackground(green); // Clears the background with the green color
