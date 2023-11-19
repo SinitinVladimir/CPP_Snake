@@ -1,32 +1,28 @@
-# Raylib-CPP-Starter-Template-for-VSCODE-V2
+# Raylib-CPP Snake Game - Learning Project
 
-Raylib C++ Starter Template for Visual Studio Code on Windows.
-This demo project contains a bouncing ball raylib example program.
-It works with raylib version 4.5. Tested on both Windows 10 and Windows 11.
+This repository is part of my learning journey into Algorithms, Object-Oriented Programming (OOP) in C++, and version control with Git and GitHub. It is based on a Raylib C++ Starter Template, originally designed for Visual Studio Code on Windows. I've used this template to build a snake game, following a YouTube tutorial, and I am applying modifications and new features as I learn.
 
-# How to use this template
+## Branch Structure
 
-1. Double click on the main.code-workspace file. This will open the template in VS Code.
-2. From the Explorer Window of VS Code navigate to the src folder and double click on the main.cpp file.
-3. Press F5 on the keyboard to compile and run the program.
+- **Main:** Contains the project as replicated from the tutorial, serving as the baseline and stable version.
+- **Features:** Dedicated to the development of new features for the snake game. Each new feature is developed in its own sub-branch.
+- **Development:** This branch holds the current work-in-progress code, including integrated features from the feature branches.
+- **Deploy:** A stable and deployable version of the game with all tested and finalized features.
 
-# What's changed
+## How to Use This Repository
 
-The template now uses folders for better organizion of the files. So, all the source code now lives in the src folder.
+1. Open the project in Visual Studio Code by double-clicking the `main.code-workspace` file.
+2. In VS Code, navigate to the `src` folder and open the `main.cpp` file.
+3. Press F5 to compile and run the program.
 
-# Video Tutorial
+## Project Structure
 
-<p align="center">
-  <img src="preview.jpg" alt="" width="800">
-</p>
+- The source code is organized within the `src` folder.
+- Different branches are used for developing new features, ongoing development, and stable versions.
 
-<p align="center">
-🎥 <a href="https://www.youtube.com/watch?v=PaAcVk5jUd8">Video Tutorial on YouTube</a>
-</p>
+## Learning Resources
 
-<br>
-<br>
-<p align="center">
-| 📺 <a href="https://www.youtube.com/channel/UC3ivOTE5EgpmF2DHLBmWIWg">My YouTube Channel</a>
-| 🌍 <a href="http://www.educ8s.tv">My Website</a> | <br>
-</p>
+![Raylib C++ Starter Template Preview](preview.jpg)
+
+- **Based on Template Tutorial:** [Video Tutorial on YouTube](https://www.youtube.com/watch?v=PaAcVk5jUd8)
+- This project is part of my learning process and not affiliated with the original tutorial creator's YouTube channel or website.
