@@ -1,45 +1,33 @@
-#include <iostream>     // standard I/O library for input and output operations
-#include <raylib.h>     // the Raylib library for graphics and game development
-#include <deque>        // the deque (double-ended queue) container from the standard library
+#include <iostream>     // Standard I/O library for input and output operations
+#include <raylib.h>     // The Raylib library for graphics and game development
+#include <deque>        // The deque (double-ended queue) container from the standard library
 #include <raymath.h>    // Raylib's math functions for vector operations
 
-using namespace std;    // using standard library classes and functions without the 'std::' prefix
+using namespace std;    // Using standard library classes and functions without the 'std::' prefix
 
-Color green = {173, 204, 96, 255};         // a green color for the background
-Color darkGreen = {43, 51, 24, 255};       // a darker green color for the snake
+Color green = {173, 204, 96, 255};         // A green color for the background
+Color darkGreen = {43, 51, 24, 255};       // A darker green color for the snake
 
-int cellSize = 30;      // the size of each cell in pixels
-int cellCount = 25;     // the number of cells in the grid
+int cellSize = 30;      // The size of each cell in pixels
+int cellCount = 25;     // The number of cells in the grid
+int offset = 75;        // The border offset for the game window
 
-double lastUpdateTime = 0;   // the time of the last update for event handling
+double lastUpdateTime = 0;   // The time of the last update for event handling
 
-bool ElementInDeque(Vector2 element, deque<Vector2> deque)
-{
-    // This function checks if a given Vector2 element is present in the provided deque of Vector2 elements.
-    // It is a utility function to ensure that certain positions like the food or new segments of the snake
-    // do not coincide with the current position of the snake.
-
-    for(unsigned int i = 0; i < deque.size(); i++) // Starts a loop over each element in the deque.
-    {
-        if(Vector2Equals(deque[i], element)) // Checks if the current element in the deque equals the given element.
-                                             // Vector2Equals is a function that compares two Vector2 objects,
-                                             // returning true if they are identical (i.e., have the same x and y values).
-
-        {
-            return true; // If the given element is found in the deque, return true.
-                         // This indicates that the element is already present in the deque.
+bool ElementInDeque(Vector2 element, deque<Vector2> deque){
+    // Iterates over each element in the deque
+    for(unsigned int i = 0; i < deque.size(); i++) {
+        // Checks if the current element in the deque equals the given element
+        if(Vector2Equals(deque[i], element)) {
+            return true; // Returns true if the given element is found in the deque
         }
     }
-    return false; // If the loop completes without finding the element, return fal  se.
-                  // This indicates that the element is not present in the deque.
+    return false; // Returns false if the element is not found
 }
 
-
-bool eventTriggered(double interval)
-{
+bool eventTriggered(double interval){
     double currentTime = GetTime();   // Retrieves the current time
-    if (currentTime - lastUpdateTime >= interval) // Checks if the specified interval has passed
-    {
+    if (currentTime - lastUpdateTime >= interval) {
         lastUpdateTime = currentTime; // Updates the last update time
         return true;                  // Returns true to trigger the event
     }
@@ -47,38 +35,38 @@ bool eventTriggered(double interval)
 }
 
 class Snake {
-    public:
-        deque<Vector2> body = {Vector2{6,9}, Vector2{5,9}, Vector2{4,9}}; // Initializes the snake's body as a deque of Vector2 positions
-        Vector2 direction = {1, 0};   // the initial direction of the snake
-        bool addSegment = false; // Growing the snake
-
+public:
+    deque<Vector2> body = {Vector2{6,9}, Vector2{5,9}, Vector2{4,9}}; // Initializes the snake's body
+    Vector2 direction = {1, 0};   // The initial direction of the snake
+    bool addSegment = false;      // Flag to indicate whether to grow the snake
 
     void Draw() {
-        for(long unsigned int i = 0; i < body.size(); i++) // Iterates through each segment of the snake's body
-        {
-            int x = body[i].x; // Retrieves the x-coordinate of the segment
-            int y = body[i].y; // Retrieves the y-coordinate of the segment
-            Rectangle segment = Rectangle{x * cellSize, y * cellSize, (float)cellSize, (float)cellSize}; // Creates a rectangle for the segment
+        // Iterates through each segment of the snake's body
+        for(long unsigned int i = 0; i < body.size(); i++) {
+            // Creates a rectangle for the segment
+            Rectangle segment = Rectangle{
+                offset + body[i].x * cellSize, 
+                offset + body[i].y * cellSize, 
+                (float)cellSize, (float)cellSize
+            };
             DrawRectangleRounded(segment, 0.5, 6, darkGreen); // Draws the rounded rectangle for the segment
         }
     }
 
-    void Update()
-    {
-            body.push_front(Vector2Add(body[0], direction)); // Adds a new segment at the front in the current direction
-        if(addSegment == true)
-        {
+    void Update() {
+        // Adds a new segment at the front in the current direction
+        body.push_front(Vector2Add(body[0], direction));
+
+        if(addSegment) {
             addSegment = false;
-        }else
-        {
-        body.pop_back(); // Removes the last segment of the body
+        } else {
+            body.pop_back(); // Removes the last segment of the body
         }
     }
 
-    void Reset()
-    {
-        body = {Vector2{6,9}, Vector2{5,9}, Vector2{4,9}}; // Initializes the snake's body as a deque of Vector2 positions
-        Vector2 direction = {1, 0};   // the initial direction of the snake
+    void Reset() {
+        body = {Vector2{6,9}, Vector2{5,9}, Vector2{4,9}}; // Reinitializes the snake's body
+        direction = {1, 0};   // Resets the initial direction of the snake
     }
 };
 
@@ -87,161 +75,151 @@ public:
     Vector2 position;    // Stores the position of the food
     Texture2D texture;   // Stores the texture of the food
 
-    Food(deque<Vector2> snakeBody) 
-    {
+    Food(deque<Vector2> snakeBody) {
         Image image = LoadImage("Graphics/Beluga_food.png"); // Loads the food image
         texture = LoadTextureFromImage(image); // Creates a texture from the loaded image
         UnloadImage(image);                   // Frees the memory used by the image
-        position = GenerateRandomPos(snakeBody);       // Generates a random position for the food
+        position = GenerateRandomPos(snakeBody); // Generates a random position for the food
     }
 
-    ~Food()
-    {
+    ~Food() {
         UnloadTexture(texture); // Frees the memory used by the texture
     }
 
-    void Draw() 
-    {
-        DrawTexture(texture, position.x * cellSize, position.y * cellSize, WHITE); // Draws the food texture at the specified position
+    void Draw() {
+        // Draws the food texture at the specified position
+        DrawTexture(texture, offset + position.x * cellSize, offset + position.y * cellSize, WHITE);
     }
 
-    Vector2 GenerateRandomCell()
-    {
-        float x = GetRandomValue(0, cellCount - 1); // Generates a random x-value within the grid. 
-                                                    // The x-coordinate will be between 0 and one less than cellCount, 
-                                                    // ensuring it's within the grid boundaries.
-
-        float y = GetRandomValue(0, cellCount - 1); // Similarly, generates a random y-value within the grid.
-                                                    // The y-coordinate is also limited to be within the grid boundaries.
-
-        return Vector2{x, y}; // Returns the generated random position as a Vector2 object.
-                            // This position is a grid cell coordinate where either food can be placed or a new snake segment can appear.
+    Vector2 GenerateRandomCell() {
+        // Generates random x and y values within the grid boundaries
+        float x = GetRandomValue(0, cellCount - 1);
+        float y = GetRandomValue(0, cellCount - 1);
+        return Vector2{x, y}; // Returns the generated random position
     }
 
-    Vector2 GenerateRandomPos(deque<Vector2> snakeBody)
-    {
-        Vector2 position = GenerateRandomCell(); // First, generates a random cell position.
-
-        // Enters a loop to ensure the generated position is not already occupied by the snake's body.
-        // It's important to prevent spawning food or a new segment of the snake on top of the existing snake.
-        while(ElementInDeque(position, snakeBody)) // Checks if the generated position overlaps with any part of the snake's body.
-        {
-            position = GenerateRandomCell(); // If there's an overlap, generate a new random cell position.
-                                            // This loop continues until a free cell is found.
+    Vector2 GenerateRandomPos(deque<Vector2> snakeBody) {
+        Vector2 position = GenerateRandomCell();
+        // Ensures the generated position is not already occupied by the snake's body
+        while(ElementInDeque(position, snakeBody)) {
+            position = GenerateRandomCell(); // Generates a new random cell position
         }
-
-        return position; // Returns the final unoccupied position as a Vector2 object.
-                        // This position is safe to use for placing food or growing the snake.
+        return position; // Returns the final unoccupied position
     }
 };
 
-
-class Game
-{
+class Game {
 public:
-    Snake snake = Snake(); // Creates an instance of the Snake class
-    Food food = Food(snake.body);    // Creates an instance of the Food class
-    bool running = true; //
+    Snake snake; // Instance of the Snake class
+    Food food;   // Instance of the Food class
+    bool running = true; // Indicates if the game is running
+    int score = 0;       // The player's score
+    Sound eatSound;      // Sound for eating
+    Sound wallSound;     // Sound for hitting a wall
 
-    void Draw()
-    {
-        food.Draw();       // Draws the food on the screen
-        snake.Draw();      // Draws the snake on the screen
+    Game(): snake(), food(snake.body) {
+        InitAudioDevice(); // Initializes the audio device
+        eatSound = LoadSound("Sounds/Siren_eat.mp3"); // Load eating sound
+        wallSound = LoadSound("Sounds/Crash_wall.mp3"); // Load collision sound
     }
 
-    void Update()
-    {
-        if (running)
-        {
-            snake.Update();    // Updates the state of the snake
-            CheckCollisionWithFood(); // Checks if the snake is colliding with the food
-            CheckCollisionWithEdges();
-            CheckCollisionWithTail();
-        }
-    }    
+    ~Game() {
+        UnloadSound(eatSound);  // Unload eating sound
+        UnloadSound(wallSound); // Unload collision sound
+        CloseAudioDevice();     // Closes the audio device
+    }
 
-    void CheckCollisionWithFood()
-    {
-        if(Vector2Equals(snake.body[0], food.position)) // Checks for collision between the snake's head and the food
-        {
-            food.position = food.GenerateRandomPos(snake.body); // Generates a new position for the food
-            snake.addSegment = true; // Snake grows its position at the frot
+    void Draw() {
+        food.Draw();  // Draws the food
+        snake.Draw(); // Draws the snake
+    }
+
+    void Update() {
+        if (running) {
+            snake.Update(); // Updates the snake
+            CheckCollisionWithFood(); // Checks collision with food
+            CheckCollisionWithEdges(); // Checks collision with edges
+            CheckCollisionWithTail();  // Checks collision with tail
         }
     }
 
-    void CheckCollisionWithEdges()
-    {
-        if(snake.body[0].x == cellCount || snake.body[0].x == -1)
-        {
+    void CheckCollisionWithFood() {
+        if(Vector2Equals(snake.body[0], food.position)) {
+            food.position = food.GenerateRandomPos(snake.body); // Regenerates food position
+            snake.addSegment = true; // Snake grows
+            score += 10;            // Increases score
+            PlaySound(eatSound);    // Play eating sound
+        }
+    }
+
+    void CheckCollisionWithEdges() {
+        // Check for collision with the grid boundaries
+        if(snake.body[0].x < 0 || snake.body[0].x >= cellCount || 
+           snake.body[0].y < 0 || snake.body[0].y >= cellCount) {
             GameOver();
         }
-        if(snake.body[0].y == cellCount || snake.body[0].y == -1)
-        {
-            GameOver();
-        }
     }
 
-    void GameOver()
-    {
-        snake.Reset();
-        food.position = food.GenerateRandomPos(snake.body);
-        running = false;
+    void GameOver() {
+        snake.Reset(); // Reset the snake
+        food.position = food.GenerateRandomPos(snake.body); // Reset food position
+        running = false; // Stops the game
+        score = 0;       // Resets the score
+        PlaySound(wallSound); // Play collision sound
     }
 
-    void CheckCollisionWithTail()
-    {
-        deque<Vector2> headlessBody = snake.body;
-        headlessBody.pop_front();
-        if(ElementInDeque(snake.body[0], headlessBody))
-        {
-            GameOver();
+    void CheckCollisionWithTail() {
+        // Check for collision with the snake's own body
+        for(size_t i = 1; i < snake.body.size(); ++i) {
+            if(Vector2Equals(snake.body[0], snake.body[i])) {
+                GameOver();
+                break;
+            }
         }
     }
 };
 
-int main()
-{
-    cout<<"Starting the game..."<<endl; // Displays a start message
-    InitWindow(cellSize*cellCount, cellSize*cellCount, "Retro Snake"); // Initializes the game window
-    SetTargetFPS(60); // a stable target frame rate to not rely on hardware capacity
+int main() {
+    // Initialization
+    cout << "Starting the game..." << endl; // Displays a start message
+    InitWindow(2 * offset + cellSize * cellCount, 2 * offset + cellSize * cellCount, "Retro Snake"); // Initializes the game window
+    SetTargetFPS(60); // Sets a stable target frame rate
 
-    Game game = Game(); // Creates a game instance
+    Game game; // Creates a game instance
 
-    while(WindowShouldClose() == false) // Keeps running until the window is closed
-    {
+    // Main game loop
+    while (!WindowShouldClose()) { // Detects window close request
         BeginDrawing(); // Starts the drawing process
 
-        if (eventTriggered(0.2)) // Checks if it's time to update the game state
-        {
-            game.Update(); // Updates the game state
+        // Game state update
+        if (eventTriggered(0.2)) { // Checks if it's time to update the game state
+            game.Update();
         }
 
-        // Checks for key presses and updates the snake's direction accordingly
-        if (IsKeyPressed(KEY_UP) && game.snake.direction.y != 1)
-        {
+        // Input handling for snake direction
+        if (IsKeyPressed(KEY_UP) && game.snake.direction.y != 1) {
             game.snake.direction = {0, -1};
             game.running = true;
         }
-
-        if (IsKeyPressed(KEY_DOWN) && game.snake.direction.y != -1)
-        {
+        if (IsKeyPressed(KEY_DOWN) && game.snake.direction.y != -1) {
             game.snake.direction = {0, 1};
             game.running = true;
         }
-
-        if (IsKeyPressed(KEY_LEFT) && game.snake.direction.x != 1)
-        {
+        if (IsKeyPressed(KEY_LEFT) && game.snake.direction.x != 1) {
             game.snake.direction = {-1, 0};
             game.running = true;
         }
-
-        if (IsKeyPressed(KEY_RIGHT) && game.snake.direction.x != -1)
-        {
+        if (IsKeyPressed(KEY_RIGHT) && game.snake.direction.x != -1) {
             game.snake.direction = {1, 0};
             game.running = true;
         }
 
-        ClearBackground(green); // Clears the background with the green color
+        // Drawing the game elements
+        ClearBackground(green); // Clears the background
+        DrawRectangleLinesEx(Rectangle{(float)offset - 5, (float)offset - 5, (float)cellSize * cellCount + 10, (float)cellSize * cellCount + 10}, 5, darkGreen);
+        // Draw the game window borders
+        DrawText("Learning Classes and algorithms by Snake ", offset-52, 20, 40, darkGreen); //Drawing the title upside middle
+        DrawText(TextFormat("%i", game.score), offset+360, offset+cellSize*cellCount+10, 40, darkGreen);  //Drawing the score on the middle bottom of the screen
         game.Draw();            // Draws the game elements
 
         EndDrawing();           // Ends the drawing process
