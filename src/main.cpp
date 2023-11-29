@@ -2,14 +2,16 @@
 #include <raylib.h>     // The Raylib library for graphics and game development
 #include <deque>        // The deque (double-ended queue) container from the standard library
 #include <raymath.h>    // Raylib's math functions for vector operations
+#include <vector>
+
 
 using namespace std;    // Using standard library classes and functions without the 'std::' prefix
 
-Color green = {173, 204, 96, 255};         // A green color for the background
-Color darkGreen = {43, 51, 24, 255};       // A darker green color for the snake
+Color backgroundColor = {173, 204, 96, 255};         // A backgroundColor color for the background
+Color snakeColor = {43, 51, 24, 255};       // A darker backgroundColor color for the snake
 
 int cellSize = 30;      // The size of each cell in pixels
-int cellCount = 25;     // The number of cells in the grid
+int cellCount = 30;     // The number of cells in the grid
 int offset = 75;        // The border offset for the game window
 
 double lastUpdateTime = 0;   // The time of the last update for event handling
@@ -34,6 +36,84 @@ bool eventTriggered(double interval){
     return false;                     // Otherwise, returns false
 }
 
+class GameMenu {
+    private:
+    bool active;
+    vector<Color> colorOptions;
+    int backgroundColorIndex;
+    int snakeColorIndex;
+
+    public:
+
+    // Method to activate the menu
+    void Activate() 
+        { active = true; }
+    GameMenu() : active(true), backgroundColorIndex(0), snakeColorIndex(1) {
+        // Initialize color options
+        colorOptions = {{255, 255, 0, 255}, {255, 165, 0, 255}, {173, 204, 96, 255}, {0, 0, 0, 255}, {128, 0, 128, 255}};
+    }
+
+    bool IsActive() const {
+        return active;
+    }
+
+    void DisplayMenu() {
+        // Clear the entire screen with a white background.
+        ClearBackground(RAYWHITE);
+
+        // Display the title "Game Menu" at the specified position (x: 400, y: 50) with font size 20 in black color.
+        DrawText("Game Menu", 400, 50, 20, BLACK);
+
+        // Display instructions "Use arrow keys to change colors" on the screen at position (x: 350, y: 100) with font size 20 in dark gray color.
+        DrawText("Use arrow keys to change colors", 350, 100, 20, DARKGRAY);
+
+        // Display the text "Background Color" on the screen to label the background color selection area.
+        DrawText("Background Color", 400, 150, 20, BLACK);
+
+        // Draw a small rectangle (20x20 pixels) representing the current background color. 
+        // The color of the rectangle is determined by the current `backgroundColorIndex` selected in the `colorOptions`.
+        DrawRectangle(600, 145, 20, 20, colorOptions[backgroundColorIndex]);
+
+        // Display the text "Snake Color" on the screen to label the snake color selection area.
+        DrawText("Snake Color", 400, 200, 20, BLACK);
+
+        // Draw a small rectangle (20x20 pixels) representing the current snake color. 
+        // The color of the rectangle is determined by the current `snakeColorIndex` selected in the `colorOptions`.
+        DrawRectangle(600, 195, 20, 20, colorOptions[snakeColorIndex]);
+
+        // Display the text "Press ENTER to start" on the screen. This serves as an instruction for the player to start the game.
+        DrawText("Press ENTER to start", 400, 300, 20, DARKBLUE);
+    }
+
+
+    void HandleInput() {
+        if (IsKeyPressed(KEY_ENTER)) {
+            active = false;
+        }
+        if (IsKeyPressed(KEY_RIGHT)) {
+            backgroundColorIndex = (backgroundColorIndex + 1) % colorOptions.size();
+        }
+        if (IsKeyPressed(KEY_LEFT)) {
+            backgroundColorIndex = (backgroundColorIndex + colorOptions.size() - 1) % colorOptions.size();
+        }
+        if (IsKeyPressed(KEY_UP)) {
+            snakeColorIndex = (snakeColorIndex + 1) % colorOptions.size();
+        }
+        if (IsKeyPressed(KEY_DOWN)) {
+            snakeColorIndex = (snakeColorIndex + colorOptions.size() - 1) % colorOptions.size();
+        }
+    }
+
+    Color GetBackgroundColor() const {
+        return colorOptions[backgroundColorIndex];
+    }
+
+    Color GetSnakeColor() const {
+        return colorOptions[snakeColorIndex];
+    }
+};
+
+
 class Snake {
 public:
     deque<Vector2> body = {Vector2{6,9}, Vector2{5,9}, Vector2{4,9}}; // Initializes the snake's body
@@ -49,7 +129,7 @@ public:
                 offset + body[i].y * cellSize, 
                 (float)cellSize, (float)cellSize
             };
-            DrawRectangleRounded(segment, 0.5, 6, darkGreen); // Draws the rounded rectangle for the segment
+            DrawRectangleRounded(segment, 0.5, 6, snakeColor); // Draws the rounded rectangle for the segment
         }
     }
 
@@ -109,6 +189,7 @@ public:
 };
 
 class Game {
+        GameMenu* menu;
 public:
     Snake snake; // Instance of the Snake class
     Food food;   // Instance of the Food class
@@ -116,6 +197,11 @@ public:
     int score = 0;       // The player's score
     Sound eatSound;      // Sound for eating
     Sound wallSound;     // Sound for hitting a wall
+
+        // Setter method to set the GameMenu reference
+    void SetMenu(GameMenu* menu) {
+        this->menu = menu;
+    }
 
     Game(): snake(), food(snake.body) {
         InitAudioDevice(); // Initializes the audio device
@@ -166,6 +252,7 @@ public:
         running = false; // Stops the game
         score = 0;       // Resets the score
         PlaySound(wallSound); // Play collision sound
+        menu->Activate(); // Reactivates the menu at the collision WITH THE WALL OR ITSELF
     }
 
     void CheckCollisionWithTail() {
@@ -185,42 +272,55 @@ int main() {
     InitWindow(2 * offset + cellSize * cellCount, 2 * offset + cellSize * cellCount, "Retro Snake"); // Initializes the game window
     SetTargetFPS(60); // Sets a stable target frame rate
 
+    GameMenu menu;
     Game game; // Creates a game instance
+    game.SetMenu(&menu); // Set the GameMenu reference
+
 
     // Main game loop
     while (!WindowShouldClose()) { // Detects window close request
         BeginDrawing(); // Starts the drawing process
 
-        // Game state update
-        if (eventTriggered(0.2)) { // Checks if it's time to update the game state
-            game.Update();
-        }
+         if (menu.IsActive()) {
+            menu.DisplayMenu();
+            menu.HandleInput();
+            if (!menu.IsActive()) {
+                backgroundColor = menu.GetBackgroundColor();
+                snakeColor = menu.GetSnakeColor();
+            }
+        } else {
+            // Input handling for snake directions
+            if ((IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) && game.snake.direction.y != 1) {
+                game.snake.direction = {0, -1};
+                game.running = true;
+            }
+            if ((IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) && game.snake.direction.y != -1) {
+                game.snake.direction = {0, 1};
+                game.running = true;
+            }
+            if ((IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A)) && game.snake.direction.x != 1) {
+                game.snake.direction = {-1, 0};
+                game.running = true;
+            }
+            if ((IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)) && game.snake.direction.x != -1) {
+                game.snake.direction = {1, 0};
+                game.running = true;
+            }
 
-        // Input handling for snake direction
-        if (IsKeyPressed(KEY_UP) && game.snake.direction.y != 1) {
-            game.snake.direction = {0, -1};
-            game.running = true;
-        }
-        if (IsKeyPressed(KEY_DOWN) && game.snake.direction.y != -1) {
-            game.snake.direction = {0, 1};
-            game.running = true;
-        }
-        if (IsKeyPressed(KEY_LEFT) && game.snake.direction.x != 1) {
-            game.snake.direction = {-1, 0};
-            game.running = true;
-        }
-        if (IsKeyPressed(KEY_RIGHT) && game.snake.direction.x != -1) {
-            game.snake.direction = {1, 0};
-            game.running = true;
-        }
+            // Game state update
+            if (eventTriggered(0.2)) { // Checks if it's time to update the game state
+                game.Update();
+            }
 
-        // Drawing the game elements
-        ClearBackground(green); // Clears the background
-        DrawRectangleLinesEx(Rectangle{(float)offset - 5, (float)offset - 5, (float)cellSize * cellCount + 10, (float)cellSize * cellCount + 10}, 5, darkGreen);
+            // Drawing the game elements
+            ClearBackground(backgroundColor);
+
+        DrawRectangleLinesEx(Rectangle{(float)offset - 5, (float)offset - 5, (float)cellSize * cellCount + 10, (float)cellSize * cellCount + 10}, 5, snakeColor);
         // Draw the game window borders
-        DrawText("Learning Classes and algorithms by Snake ", offset-52, 20, 40, darkGreen); //Drawing the title upside middle
-        DrawText(TextFormat("%i", game.score), offset+360, offset+cellSize*cellCount+10, 40, darkGreen);  //Drawing the score on the middle bottom of the screen
+        DrawText("Learning Classes and algorithms by Snake ", offset-52, 20, 40, snakeColor); //Drawing the title upside middle
+        DrawText(TextFormat("%i", game.score), offset+360, offset+cellSize*cellCount+10, 40, snakeColor);  //Drawing the score on the middle bottom of the screen
         game.Draw();            // Draws the game elements
+        } // end
 
         EndDrawing();           // Ends the drawing process
     }
