@@ -3,6 +3,11 @@
 #include <deque>        // The deque (double-ended queue) container from the standard library
 #include <raymath.h>    // Raylib's math functions for vector operations
 #include <vector>
+#include <string>
+//#include <raylib-audio.h>
+
+
+#define MAX_INPUT_CHARS 12 // desired maximum characters
 
 
 using namespace std;    // Using standard library classes and functions without the 'std::' prefix
@@ -15,6 +20,12 @@ int cellCount = 30;     // The number of cells in the grid
 int offset = 75;        // The border offset for the game window
 
 double lastUpdateTime = 0;   // The time of the last update for event handling
+
+struct PlayerData {
+    string name;
+    int score;
+};
+
 
 bool ElementInDeque(Vector2 element, deque<Vector2> deque){
     // Iterates over each element in the deque
@@ -42,6 +53,15 @@ class GameMenu {
     vector<Color> colorOptions;
     int backgroundColorIndex;
     int snakeColorIndex;
+    bool mouseOnNameInputBox;
+
+    Rectangle nameInputBox;
+
+
+    string playerName;  // to store current player's name
+    vector<PlayerData> players;  // to store session player data
+
+
 
     public:
 
@@ -49,6 +69,8 @@ class GameMenu {
     void Activate() 
         { active = true; }
     GameMenu() : active(true), backgroundColorIndex(0), snakeColorIndex(1) {
+            // Initialize name input box
+        nameInputBox = {400, 320, 325, 50};     // X , Y, Width, Height
         // Initialize color options
         colorOptions = {{255, 255, 0, 255}, {255, 165, 0, 255}, {173, 204, 96, 255}, {0, 0, 0, 255}, {128, 0, 128, 255}};
     }
@@ -57,6 +79,14 @@ class GameMenu {
         return active;
     }
 
+    void Deactivate() {
+        active = false;
+    }
+
+    string GetPlayerName() const {
+    return playerName;
+    }
+   
     void DisplayMenu() {
         // Clear the entire screen with a white background.
         ClearBackground(RAYWHITE);
@@ -80,37 +110,66 @@ class GameMenu {
         // Draw a small rectangle (20x20 pixels) representing the current snake color. 
         // The color of the rectangle is determined by the current `snakeColorIndex` selected in the `colorOptions`.
         DrawRectangle(600, 195, 20, 20, colorOptions[snakeColorIndex]);
+        
+        DrawText("Enter your name: ", 400, 300, 20, BLACK);
 
-        // Display the text "Press ENTER to start" on the screen. This serves as an instruction for the player to start the game.
-        DrawText("Press ENTER to start", 400, 300, 20, DARKBLUE);
+        // Display the input box for the player's name
+        DrawRectangleRec(nameInputBox, LIGHTGRAY);
+        DrawRectangleLines((int)nameInputBox.x, (int)nameInputBox.y, (int)nameInputBox.width, (int)nameInputBox.height, DARKGRAY);
+        DrawText(playerName.c_str(), (int)nameInputBox.x + 5, (int)nameInputBox.y + 8, 40, MAROON);
+
+        DrawText("Press ENTER to start", 400, 500, 20, DARKBLUE);
     }
 
 
     void HandleInput() {
+        // Update mouseOnNameInputBox based on mouse interaction
+        mouseOnNameInputBox = CheckCollisionPointRec(GetMousePosition(), nameInputBox);
+
+
         if (IsKeyPressed(KEY_ENTER)) {
             active = false;
         }
-        if (IsKeyPressed(KEY_RIGHT)) {
+        if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)) {
             backgroundColorIndex = (backgroundColorIndex + 1) % colorOptions.size();
         }
-        if (IsKeyPressed(KEY_LEFT)) {
+        if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A)) {
             backgroundColorIndex = (backgroundColorIndex + colorOptions.size() - 1) % colorOptions.size();
         }
-        if (IsKeyPressed(KEY_UP)) {
+        if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) {
             snakeColorIndex = (snakeColorIndex + 1) % colorOptions.size();
         }
-        if (IsKeyPressed(KEY_DOWN)) {
+        if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) {
             snakeColorIndex = (snakeColorIndex + colorOptions.size() - 1) % colorOptions.size();
         }
-    }
+        // Handle player name input
+        if (mouseOnNameInputBox) {
+            int key = GetCharPressed();
+            while (key > 0) {
+                if ((key >= 32) && (key <= 125) && (playerName.length() < MAX_INPUT_CHARS)) {
+                    playerName += (char)key;
+                }
 
+                key = GetCharPressed();
+            }
+
+            if (IsKeyPressed(KEY_BACKSPACE)) {
+                if (!playerName.empty()) {
+                    playerName.pop_back();
+                }
+            }
+        }
+
+    }
+ 
     Color GetBackgroundColor() const {
         return colorOptions[backgroundColorIndex];
     }
 
     Color GetSnakeColor() const {
         return colorOptions[snakeColorIndex];
-    }
+    }        
+
 };
 
 
@@ -153,22 +212,52 @@ public:
 class Food {
 public:
     Vector2 position;    // Stores the position of the food
-    Texture2D texture;   // Stores the texture of the food
+    std::vector<Texture2D> textures; // Updated to store multiple textures
+    int textureIndex; // Index to keep track of the current texture
+    std::vector<Sound> eatSounds; // Updated to store multiple sounds
+    int soundIndex; // Index to keep track of the current sound
 
     Food(deque<Vector2> snakeBody) {
-        Image image = LoadImage("Graphics/Beluga_food.png"); // Loads the food image
-        texture = LoadTextureFromImage(image); // Creates a texture from the loaded image
-        UnloadImage(image);                   // Frees the memory used by the image
-        position = GenerateRandomPos(snakeBody); // Generates a random position for the food
+        // Load multiple textures
+        textures.push_back(LoadTexture("Graphics/Beluga_food1.png"));
+        textures.push_back(LoadTexture("Graphics/2.png"));
+        textures.push_back(LoadTexture("Graphics/3.png"));
+        textures.push_back(LoadTexture("Graphics/4.png"));
+
+
+
+        // Initialize texture index
+        textureIndex = GetRandomValue(0, textures.size() - 1);
+
+        // Load multiple sounds
+        eatSounds.push_back(LoadSound("Sounds/Siren_eat1.mp3"));
+        eatSounds.push_back(LoadSound("Sounds/2.mp3"));
+        eatSounds.push_back(LoadSound("Sounds/3.mp3"));
+        eatSounds.push_back(LoadSound("Sounds/4.mp3"));
+
+
+
+        // Initialize sound index
+        soundIndex = GetRandomValue(0, eatSounds.size() - 1);
+
+        position = GenerateRandomPos(snakeBody);
     }
 
     ~Food() {
-        UnloadTexture(texture); // Frees the memory used by the texture
+        // Unload all textures
+        for (const auto& texture : textures) {
+            UnloadTexture(texture);
+        }
+
+        // Unload all sounds
+        for (const auto& sound : eatSounds) {
+            UnloadSound(sound);
+        }
     }
 
     void Draw() {
-        // Draws the food texture at the specified position
-        DrawTexture(texture, offset + position.x * cellSize, offset + position.y * cellSize, WHITE);
+        // Draw the current texture at the specified position
+        DrawTexture(textures[textureIndex], offset + position.x * cellSize, offset + position.y * cellSize, WHITE); // Fade(WHITE, 0.5f)
     }
 
     Vector2 GenerateRandomCell() {
@@ -189,6 +278,7 @@ public:
 };
 
 class Game {
+        //Game game; //Declaring the game object
         GameMenu* menu;
 public:
     Snake snake; // Instance of the Snake class
@@ -198,6 +288,11 @@ public:
     Sound eatSound;      // Sound for eating
     Sound wallSound;     // Sound for hitting a wall
 
+    string playerName;  // to store current player's name
+    vector<PlayerData> players;
+
+
+
         // Setter method to set the GameMenu reference
     void SetMenu(GameMenu* menu) {
         this->menu = menu;
@@ -205,12 +300,12 @@ public:
 
     Game(): snake(), food(snake.body) {
         InitAudioDevice(); // Initializes the audio device
-        eatSound = LoadSound("Sounds/Siren_eat.mp3"); // Load eating sound
+        // LoadSound("Sounds/Siren_eat.mp3"); // Load eating sound
         wallSound = LoadSound("Sounds/Crash_wall.mp3"); // Load collision sound
     }
 
     ~Game() {
-        UnloadSound(eatSound);  // Unload eating sound
+        // UnloadSound(eatSound);  // Unload eating sound
         UnloadSound(wallSound); // Unload collision sound
         CloseAudioDevice();     // Closes the audio device
     }
@@ -232,9 +327,17 @@ public:
     void CheckCollisionWithFood() {
         if(Vector2Equals(snake.body[0], food.position)) {
             food.position = food.GenerateRandomPos(snake.body); // Regenerates food position
+            
+
+            // Change the food texture to a random one
+            food.textureIndex = GetRandomValue(0, food.textures.size() - 1);
+
+            // Play a random eating sound
+            PlaySound(food.eatSounds[GetRandomValue(0, food.eatSounds.size() - 1)]);
+
             snake.addSegment = true; // Snake grows
             score += 10;            // Increases score
-            PlaySound(eatSound);    // Play eating sound
+
         }
     }
 
@@ -247,6 +350,11 @@ public:
     }
 
     void GameOver() {
+        PlayerData playerData;
+        playerData.name = playerName;
+        playerData.score = score;
+        players.push_back(playerData); // Save player's data
+
         snake.Reset(); // Reset the snake
         food.position = food.GenerateRandomPos(snake.body); // Reset food position
         running = false; // Stops the game
@@ -276,17 +384,19 @@ int main() {
     Game game; // Creates a game instance
     game.SetMenu(&menu); // Set the GameMenu reference
 
-
     // Main game loop
     while (!WindowShouldClose()) { // Detects window close request
         BeginDrawing(); // Starts the drawing process
 
          if (menu.IsActive()) {
+                // Call to InputPlayerName method to get player's name
+
             menu.DisplayMenu();
             menu.HandleInput();
             if (!menu.IsActive()) {
                 backgroundColor = menu.GetBackgroundColor();
                 snakeColor = menu.GetSnakeColor();
+                game.playerName = menu.GetPlayerName();  // Pass the player's name to the Game class
             }
         } else {
             // Input handling for snake directions
@@ -320,6 +430,13 @@ int main() {
         DrawText("Learning Classes and algorithms by Snake ", offset-52, 20, 40, snakeColor); //Drawing the title upside middle
         DrawText(TextFormat("%i", game.score), offset+360, offset+cellSize*cellCount+10, 40, snakeColor);  //Drawing the score on the middle bottom of the screen
         game.Draw();            // Draws the game elements
+        if (!game.running) {
+            // Display player's data after the game ends
+            for (size_t i = 0; i < game.players.size(); ++i) {
+                DrawText(TextFormat("Player: %s - Score: %i", game.players[i].name.c_str(), game.players[i].score),
+                         offset + 50, offset + 50 + i * 30, 20, snakeColor);
+            }
+        }
         } // end
 
         EndDrawing();           // Ends the drawing process
@@ -328,3 +445,4 @@ int main() {
     CloseWindow(); // Closes the game window
     return 0;
 }
+
