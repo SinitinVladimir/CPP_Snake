@@ -4,7 +4,6 @@
 #include <raymath.h>    // Raylib's math functions for vector operations
 #include <vector>
 #include <string>
-//#include <raylib-audio.h>
 
 
 #define MAX_INPUT_CHARS 12 // desired maximum characters
@@ -219,7 +218,8 @@ public:
 
     Food(deque<Vector2> snakeBody) {
         // Load multiple textures
-        textures.push_back(LoadTexture("Graphics/Beluga_food1.png"));
+        //textures.push_back(LoadTexture("Graphics/Beluga_food1.png"));
+        textures.push_back(LoadTexture("Graphics/1.png"));
         textures.push_back(LoadTexture("Graphics/2.png"));
         textures.push_back(LoadTexture("Graphics/3.png"));
         textures.push_back(LoadTexture("Graphics/4.png"));
@@ -231,14 +231,21 @@ public:
 
         // Load multiple sounds
         eatSounds.push_back(LoadSound("Sounds/Siren_eat1.mp3"));
-        eatSounds.push_back(LoadSound("Sounds/2.mp3"));
-        eatSounds.push_back(LoadSound("Sounds/3.mp3"));
-        eatSounds.push_back(LoadSound("Sounds/4.mp3"));
+        eatSounds.push_back(LoadSound("Sounds/a.mp3"));
+        eatSounds.push_back(LoadSound("Sounds/b.mp3"));
+        eatSounds.push_back(LoadSound("Sounds/c.mp3"));
 
 
 
         // Initialize sound index
         soundIndex = GetRandomValue(0, eatSounds.size() - 1);
+
+        for (const auto& sound : eatSounds) {
+            if (sound.stream.buffer == nullptr) {
+                // Display a message indicating that the sound failed to load
+                printf("Error loading sound file.\n");
+            }
+        }
 
         position = GenerateRandomPos(snakeBody);
     }
@@ -257,7 +264,7 @@ public:
 
     void Draw() {
         // Draw the current texture at the specified position
-        DrawTexture(textures[textureIndex], offset + position.x * cellSize, offset + position.y * cellSize, WHITE); // Fade(WHITE, 0.5f)
+        DrawTexture(textures[textureIndex], offset + position.x * cellSize, offset + position.y * cellSize, Fade(WHITE, 0.5f)); // 
     }
 
     Vector2 GenerateRandomCell() {
@@ -285,7 +292,7 @@ public:
     Food food;   // Instance of the Food class
     bool running = true; // Indicates if the game is running
     int score = 0;       // The player's score
-    Sound eatSound;      // Sound for eating
+    //Sound eatSound;      // Sound for eating
     Sound wallSound;     // Sound for hitting a wall
 
     string playerName;  // to store current player's name
@@ -299,15 +306,15 @@ public:
     }
 
     Game(): snake(), food(snake.body) {
-        InitAudioDevice(); // Initializes the audio device
-        // LoadSound("Sounds/Siren_eat.mp3"); // Load eating sound
+        //InitAudioDevice(); // Initializes the audio device
+        //LoadSound("Sounds/Siren_eat.mp3"); // Load eating sound
         wallSound = LoadSound("Sounds/Crash_wall.mp3"); // Load collision sound
     }
 
     ~Game() {
         // UnloadSound(eatSound);  // Unload eating sound
         UnloadSound(wallSound); // Unload collision sound
-        CloseAudioDevice();     // Closes the audio device
+       // CloseAudioDevice();     // Closes the audio device
     }
 
     void Draw() {
@@ -329,14 +336,20 @@ public:
             food.position = food.GenerateRandomPos(snake.body); // Regenerates food position
             
 
-            // Change the food texture to a random one
-            food.textureIndex = GetRandomValue(0, food.textures.size() - 1);
-
-            // Play a random eating sound
-            PlaySound(food.eatSounds[GetRandomValue(0, food.eatSounds.size() - 1)]);
+// Increment the texture index and loop back to the beginning if necessary
+        food.textureIndex = (food.textureIndex + 1) % food.textures.size();
 
             snake.addSegment = true; // Snake grows
             score += 10;            // Increases score
+            //InitAudioDevice(); // Initializes the audio device
+            // Play a random eating sound
+            //PlaySound(food.eatSounds(food.soundIndex));
+            //food.soundIndex = (food.soundIndex + 1) % food.eatSounds.size();
+            //CloseAudioDevice(); // Close the audio device
+            // Play a ordered eating sound
+            PlaySound(food.eatSounds[food.soundIndex]);
+            food.soundIndex = (food.soundIndex + 1) % food.eatSounds.size();
+            // PlaySound(food.soundIndex[GetRandomValue(0, food.eatSounds.size() - 1)]);
 
         }
     }
@@ -379,7 +392,7 @@ int main() {
     cout << "Starting the game..." << endl; // Displays a start message
     InitWindow(2 * offset + cellSize * cellCount, 2 * offset + cellSize * cellCount, "Retro Snake"); // Initializes the game window
     SetTargetFPS(60); // Sets a stable target frame rate
-
+    InitAudioDevice(); // Initializes the audio device
     GameMenu menu;
     Game game; // Creates a game instance
     game.SetMenu(&menu); // Set the GameMenu reference
@@ -442,6 +455,8 @@ int main() {
         EndDrawing();           // Ends the drawing process
     }
 
+    CloseAudioDevice(); // Close the audio device
+    
     CloseWindow(); // Closes the game window
     return 0;
 }
