@@ -13,11 +13,11 @@ using namespace std;    // Using standard library classes and functions without 
 
 Color backgroundColor = {173, 204, 96, 255};         // A backgroundColor color for the background
 Color snakeColor = {43, 51, 24, 255};       // A darker backgroundColor color for the snake
-int screenWidth, screenHeight; // Screen dimensions
-int gridWidth, gridHeight; // Grid dimensions
-int cellSize;      // The size of each cell in pixels
+
+int cellSize = 30;      // The size of each cell in pixels
 int cellCount = 30;     // The number of cells in the grid
 int offset = 75;        // The border offset for the game window
+
 double lastUpdateTime = 0;   // The time of the last update for event handling
 
 enum class SpeedLevel {
@@ -141,7 +141,7 @@ class GameMenu {
         DrawText("Press ENTER to start", 400, 500, 20, DARKBLUE);
 
         // Add display for speed level selection
-        DrawText("Speed Level", 400, 250, 20, BLACK);
+        DrawText("Speed Level < >", 400, 250, 20, BLACK);
         const char* speedLevels[] = {"Slow", "Medium", "Fast", "Very Fast"};
         DrawText(speedLevels[speedLevelIndex], 600, 245, 20, colorOptions[snakeColorIndex]);
 
@@ -187,10 +187,10 @@ class GameMenu {
             }
         }
                 // Handle speed level selection
-        if (IsKeyPressed(KEY_Z)) {
+        if (IsKeyPressed(KEY_COMMA)) {
             speedLevelIndex = (speedLevelIndex - 1 + 4) % 4; // Cycle backwards through speed levels
         }
-        if (IsKeyPressed(KEY_X)) {
+        if (IsKeyPressed(KEY_PERIOD)) {
             speedLevelIndex = (speedLevelIndex + 1) % 4; // Cycle forwards through speed levels
         }
 
@@ -333,6 +333,14 @@ class Game {
 
         SpeedLevel speedLevel = SpeedLevel::SLOW; // New member for speed level
 
+        vector<string> messages = {
+            "Learning Classes and algorithms by Snake",
+            "Message after first food",
+            "Message after second food",};
+
+        int currentMessageIndex = 0; // To keep track of the current message
+
+
         double GetUpdateInterval() {
         double baseInterval = 0.2;
         switch(speedLevel) {
@@ -350,7 +358,6 @@ class Game {
     }
     Game(): snake(), food(snake.body) {
         //InitAudioDevice(); // Initializes the audio device
-        //LoadSound("Sounds/Siren_eat.mp3"); // Load eating sound
         wallSound = LoadSound("Sounds/Crash_wall.mp3"); // Load collision sound
     }
     ~Game() {
@@ -377,6 +384,8 @@ class Game {
             food.textureIndex = (food.textureIndex + 1) % food.textures.size();
             snake.addSegment = true; // Snake grows
             score += 10;            // Increases score
+            //Increment the message vector index
+            currentMessageIndex = (currentMessageIndex + 1) % messages.size();
             // Play a ordered eating sound
             PlaySound(food.eatSounds[food.soundIndex]);
             food.soundIndex = (food.soundIndex + 1) % food.eatSounds.size();
@@ -416,19 +425,7 @@ class Game {
 int main() {
     // Initialization
     cout << "Starting the game..." << endl; // Displays a start message
-
-    // Get the screen width and height
-    screenWidth = GetMonitorWidth(0);
-    screenHeight = GetMonitorHeight(0);
-    // cellCount = ...; // Calculate dynamically 
-    // Calculate cellSize based on screen size
-    cellSize = min(screenWidth, screenHeight) / cellCount;
-    // Calculate grid dimensions
-    gridWidth = cellSize * cellCount;
-    gridHeight = cellSize * cellCount;
-    // Adjust offset based on screen size
-    offset = (screenWidth - gridWidth) / 2; // Center the grid horizontally
-
+    
     InitWindow(2 * offset + cellSize * cellCount, 2 * offset + cellSize * cellCount, "Retro Snake"); // Initializes the game window
     SetTargetFPS(60); // Sets a stable target frame rate
     InitAudioDevice(); // Initializes the audio device
@@ -475,7 +472,7 @@ int main() {
         ClearBackground(backgroundColor);
         DrawRectangleLinesEx(Rectangle{(float)offset - 5, (float)offset - 5, (float)cellSize * cellCount + 10, (float)cellSize * cellCount + 10}, 5, snakeColor);
         // Draw the game window borders
-        DrawText("Learning Classes and algorithms by Snake ", offset-52, 20, 40, snakeColor); //Drawing the title upside middle
+        DrawText(game.messages[game.currentMessageIndex].c_str(), offset-52, 20, 40, snakeColor);
         DrawText(TextFormat("%i", game.score), offset+360, offset+cellSize*cellCount+10, 40, snakeColor);  //Drawing the score on the middle bottom of the screen
         game.Draw();            // Draws the game elements
             if (!game.running) {
