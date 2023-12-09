@@ -4,6 +4,7 @@
 #include <raymath.h>    // Raylib's math functions for vector operations
 #include <vector>
 #include <string>
+#include <algorithm>
 
 
 #define MAX_INPUT_CHARS 12 // desired maximum characters
@@ -15,7 +16,7 @@ Color backgroundColor = {173, 204, 96, 255};         // A backgroundColor color 
 Color snakeColor = {43, 51, 24, 255};       // A darker backgroundColor color for the snake
 
 int cellSize = 30;      // The size of each cell in pixels
-int cellCount = 30;     // The number of cells in the grid
+int cellCount = 29;     // The number of cells in the grid
 int offset = 75;        // The border offset for the game window
 
 double lastUpdateTime = 0;   // The time of the last update for event handling
@@ -143,7 +144,7 @@ class GameMenu {
         // Add display for speed level selection
         DrawText("Speed Level < >", 400, 250, 20, BLACK);
         const char* speedLevels[] = {"Slow", "Medium", "Fast", "Very Fast"};
-        DrawText(speedLevels[speedLevelIndex], 600, 245, 20, colorOptions[snakeColorIndex]);
+        DrawText(speedLevels[speedLevelIndex], 600, 245, 20, BLACK);
 
  
     }
@@ -168,6 +169,9 @@ class GameMenu {
         }
         if (IsKeyPressed(KEY_DOWN)) {
             snakeColorIndex = (snakeColorIndex + colorOptions.size() - 1) % colorOptions.size();
+        }
+            if (backgroundColorIndex == snakeColorIndex) {
+        snakeColorIndex = (snakeColorIndex + 1) % colorOptions.size(); // Change snake color
         }
         // Handle player name input
         if (mouseOnNameInputBox) {
@@ -255,6 +259,8 @@ class Snake {
     };
 
 class Food {
+    private:
+    SpeedLevel currentDifficulty;
     public:
     Vector2 position;    // Stores the position of the food
     std::vector<Texture2D> textures; // Updated to store multiple textures
@@ -262,7 +268,7 @@ class Food {
     std::vector<Sound> eatSounds; // Updated to store multiple sounds
     int soundIndex; // Index to keep track of the current sound
 
-    Food(deque<Vector2> snakeBody) {
+    Food(deque<Vector2> snakeBody, SpeedLevel difficulty) : currentDifficulty(difficulty) {
         // Load multiple textures
         //textures.push_back(LoadTexture("Graphics/Beluga_food1.png"));
         textures.push_back(LoadTexture("Graphics/1.png"));
@@ -297,16 +303,26 @@ class Food {
             UnloadSound(sound);
         }
     }
+
     void Draw() {
         // Draw the current texture at the specified position
         DrawTexture(textures[textureIndex], offset + position.x * cellSize, offset + position.y * cellSize, Fade(WHITE, 0.5f)); // 
     }
-    Vector2 GenerateRandomCell() {
-        // Generates random x and y values within the grid boundaries
-        float x = GetRandomValue(0, cellCount - 1);
-        float y = GetRandomValue(0, cellCount - 1);
-        return Vector2{x, y}; // Returns the generated random position
+    Vector2 GenerateRandomCell() { //UPDT difficulty level
+    int minDistance;
+    switch (currentDifficulty) {
+        case SpeedLevel::SLOW:       minDistance = 4; break;
+        case SpeedLevel::MEDIUM:     minDistance = 3; break;
+        case SpeedLevel::FAST:       minDistance = 2; break;
+        case SpeedLevel::VERY_FAST:  minDistance = 1; break;
+        default:                     minDistance = 1;
     }
+
+    float x = GetRandomValue(minDistance, cellCount - 1 - minDistance);
+    float y = GetRandomValue(minDistance, cellCount - 1 - minDistance);
+    return Vector2{x, y};
+}
+
     Vector2 GenerateRandomPos(deque<Vector2> snakeBody) {
         Vector2 position = GenerateRandomCell();
         // Ensures the generated position is not already occupied by the snake's body
@@ -318,8 +334,9 @@ class Food {
     };
 
 class Game {
-        //Game game; //Declaring the game object
         GameMenu* menu;
+        bool difficultyHasChanged;
+        SpeedLevel newDifficulty;
     public:
         Snake snake; // Instance of the Snake class
         Food food;   // Instance of the Food class
@@ -356,8 +373,18 @@ class Game {
     void SetMenu(GameMenu* menu) {
         this->menu = menu;
     }
-    Game(): snake(), food(snake.body) {
-        //InitAudioDevice(); // Initializes the audio device
+
+    void ChangeDifficulty(SpeedLevel newLevel) {
+    newDifficulty = newLevel;
+    difficultyHasChanged = true;
+    }
+
+    void SetDifficulty(SpeedLevel newLevel) {
+        speedLevel = newLevel;
+        food = Food(snake.body, speedLevel); // Reinitialize food with the new difficulty
+    }
+
+    Game() : snake(), food(snake.body, speedLevel), difficultyHasChanged(false), newDifficulty(SpeedLevel::SLOW){ //passing the speedLevel to the food object to use difficulty level updt
         wallSound = LoadSound("Sounds/Crash_wall.mp3"); // Load collision sound
     }
     ~Game() {
@@ -365,6 +392,8 @@ class Game {
         UnloadSound(wallSound); // Unload collision sound
        // CloseAudioDevice();     // Closes the audio device
     }
+
+
     void Draw() {
         food.Draw();  // Draws the food
         snake.Draw(); // Draws the snake
@@ -375,6 +404,11 @@ class Game {
             CheckCollisionWithFood(); // Checks collision with food
             CheckCollisionWithEdges(); // Checks collision with edges
             CheckCollisionWithTail();  // Checks collision with tail
+            if (difficultyHasChanged) {
+            SetDifficulty(newDifficulty);
+            difficultyHasChanged = false; // Reset the flag after changing the difficulty
+        
+            }
         }
     }
     void CheckCollisionWithFood() {
@@ -398,6 +432,13 @@ class Game {
             GameOver();
         }
     }
+
+    void SortLeaderboard() {
+        sort(players.begin(), players.end(), [](const PlayerData& a, const PlayerData& b) {
+            return a.score > b.score; // Sort in descending order of score
+        });
+        }
+
     void GameOver() {
         PlayerData playerData;
         playerData.name = playerName;
@@ -407,6 +448,7 @@ class Game {
         snake.Reset(); // Reset the snake
         food.position = food.GenerateRandomPos(snake.body); // Reset food position
         running = false; // Stops the game
+        SortLeaderboard();
         score = 0;       // Resets the score
         PlaySound(wallSound); // Play collision sound
         menu->Activate(); // Reactivates the menu at the collision WITH THE WALL OR ITSELF
@@ -444,6 +486,8 @@ int main() {
                 snakeColor = menu.GetSnakeColor();
                 game.playerName = menu.GetPlayerName();  // Pass the player's name to the Game class
                 game.speedLevel = menu.GetSpeedLevel(); // Set the selected speed level
+                game.speedLevel = menu.GetSpeedLevel(); // Set the selected speed level
+                //game.food = Food(game.snake.body, game.speedLevel); // Initialize food with the correct difficulty
             }
         } else {
             // Input handling for snake directions
