@@ -4,7 +4,6 @@
 #include <raymath.h>    // Raylib's math functions for vector operations
 #include <vector>
 #include <string>
-//#include <raylib-audio.h>
 
 
 #define MAX_INPUT_CHARS 12 // desired maximum characters
@@ -14,17 +13,35 @@ using namespace std;    // Using standard library classes and functions without 
 
 Color backgroundColor = {173, 204, 96, 255};         // A backgroundColor color for the background
 Color snakeColor = {43, 51, 24, 255};       // A darker backgroundColor color for the snake
-
-int cellSize = 30;      // The size of each cell in pixels
+int screenWidth, screenHeight; // Screen dimensions
+int gridWidth, gridHeight; // Grid dimensions
+int cellSize;      // The size of each cell in pixels
 int cellCount = 30;     // The number of cells in the grid
 int offset = 75;        // The border offset for the game window
-
 double lastUpdateTime = 0;   // The time of the last update for event handling
 
+enum class SpeedLevel {
+    SLOW,
+    MEDIUM,
+    FAST,
+    VERY_FAST
+};
 struct PlayerData {
     string name;
     int score;
+    SpeedLevel difficulty; // New field to store the difficulty level
 };
+
+
+string SpeedLevelToString(SpeedLevel level) {
+    switch(level) {
+        case SpeedLevel::SLOW: return "Slow";
+        case SpeedLevel::MEDIUM: return "Medium";
+        case SpeedLevel::FAST: return "Fast";
+        case SpeedLevel::VERY_FAST: return "Very Fast";
+        default: return "Unknown";
+    }
+}
 
 
 bool ElementInDeque(Vector2 element, deque<Vector2> deque){
@@ -47,6 +64,7 @@ bool eventTriggered(double interval){
     return false;                     // Otherwise, returns false
 }
 
+
 class GameMenu {
     private:
     bool active;
@@ -54,6 +72,8 @@ class GameMenu {
     int backgroundColorIndex;
     int snakeColorIndex;
     bool mouseOnNameInputBox;
+
+    int speedLevelIndex = 0; // Index for speed level selection
 
     Rectangle nameInputBox;
 
@@ -119,6 +139,13 @@ class GameMenu {
         DrawText(playerName.c_str(), (int)nameInputBox.x + 5, (int)nameInputBox.y + 8, 40, MAROON);
 
         DrawText("Press ENTER to start", 400, 500, 20, DARKBLUE);
+
+        // Add display for speed level selection
+        DrawText("Speed Level", 400, 250, 20, BLACK);
+        const char* speedLevels[] = {"Slow", "Medium", "Fast", "Very Fast"};
+        DrawText(speedLevels[speedLevelIndex], 600, 245, 20, colorOptions[snakeColorIndex]);
+
+ 
     }
 
 
@@ -130,16 +157,16 @@ class GameMenu {
         if (IsKeyPressed(KEY_ENTER)) {
             active = false;
         }
-        if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)) {
+        if (IsKeyPressed(KEY_RIGHT)) {
             backgroundColorIndex = (backgroundColorIndex + 1) % colorOptions.size();
         }
-        if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A)) {
+        if (IsKeyPressed(KEY_LEFT)) {
             backgroundColorIndex = (backgroundColorIndex + colorOptions.size() - 1) % colorOptions.size();
         }
-        if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) {
+        if (IsKeyPressed(KEY_UP)) {
             snakeColorIndex = (snakeColorIndex + 1) % colorOptions.size();
         }
-        if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) {
+        if (IsKeyPressed(KEY_DOWN)) {
             snakeColorIndex = (snakeColorIndex + colorOptions.size() - 1) % colorOptions.size();
         }
         // Handle player name input
@@ -159,7 +186,25 @@ class GameMenu {
                 }
             }
         }
+                // Handle speed level selection
+        if (IsKeyPressed(KEY_Z)) {
+            speedLevelIndex = (speedLevelIndex - 1 + 4) % 4; // Cycle backwards through speed levels
+        }
+        if (IsKeyPressed(KEY_X)) {
+            speedLevelIndex = (speedLevelIndex + 1) % 4; // Cycle forwards through speed levels
+        }
 
+
+    }
+
+     SpeedLevel GetSpeedLevel() const {
+        switch(speedLevelIndex) {
+            case 0: return SpeedLevel::SLOW;
+            case 1: return SpeedLevel::MEDIUM;
+            case 2: return SpeedLevel::FAST;
+            case 3: return SpeedLevel::VERY_FAST;
+            default: return SpeedLevel::SLOW;
+        }
     }
  
     Color GetBackgroundColor() const {
@@ -174,7 +219,7 @@ class GameMenu {
 
 
 class Snake {
-public:
+    public:
     deque<Vector2> body = {Vector2{6,9}, Vector2{5,9}, Vector2{4,9}}; // Initializes the snake's body
     Vector2 direction = {1, 0};   // The initial direction of the snake
     bool addSegment = false;      // Flag to indicate whether to grow the snake
@@ -207,10 +252,10 @@ public:
         body = {Vector2{6,9}, Vector2{5,9}, Vector2{4,9}}; // Reinitializes the snake's body
         direction = {1, 0};   // Resets the initial direction of the snake
     }
-};
+    };
 
 class Food {
-public:
+    public:
     Vector2 position;    // Stores the position of the food
     std::vector<Texture2D> textures; // Updated to store multiple textures
     int textureIndex; // Index to keep track of the current texture
@@ -219,54 +264,49 @@ public:
 
     Food(deque<Vector2> snakeBody) {
         // Load multiple textures
-        textures.push_back(LoadTexture("Graphics/Beluga_food1.png"));
+        //textures.push_back(LoadTexture("Graphics/Beluga_food1.png"));
+        textures.push_back(LoadTexture("Graphics/1.png"));
         textures.push_back(LoadTexture("Graphics/2.png"));
         textures.push_back(LoadTexture("Graphics/3.png"));
         textures.push_back(LoadTexture("Graphics/4.png"));
-
-
-
         // Initialize texture index
         textureIndex = GetRandomValue(0, textures.size() - 1);
-
         // Load multiple sounds
         eatSounds.push_back(LoadSound("Sounds/Siren_eat1.mp3"));
-        eatSounds.push_back(LoadSound("Sounds/2.mp3"));
-        eatSounds.push_back(LoadSound("Sounds/3.mp3"));
-        eatSounds.push_back(LoadSound("Sounds/4.mp3"));
-
-
-
+        eatSounds.push_back(LoadSound("Sounds/a.mp3"));
+        eatSounds.push_back(LoadSound("Sounds/b.mp3"));
+        eatSounds.push_back(LoadSound("Sounds/c.mp3"));
         // Initialize sound index
         soundIndex = GetRandomValue(0, eatSounds.size() - 1);
 
+        for (const auto& sound : eatSounds) {
+            if (sound.stream.buffer == nullptr) {
+                // Display a message indicating that the sound failed to load
+                printf("Error loading sound file.\n");
+            }
+        }
         position = GenerateRandomPos(snakeBody);
     }
-
     ~Food() {
         // Unload all textures
         for (const auto& texture : textures) {
             UnloadTexture(texture);
         }
-
         // Unload all sounds
         for (const auto& sound : eatSounds) {
             UnloadSound(sound);
         }
     }
-
     void Draw() {
         // Draw the current texture at the specified position
-        DrawTexture(textures[textureIndex], offset + position.x * cellSize, offset + position.y * cellSize, WHITE); // Fade(WHITE, 0.5f)
+        DrawTexture(textures[textureIndex], offset + position.x * cellSize, offset + position.y * cellSize, Fade(WHITE, 0.5f)); // 
     }
-
     Vector2 GenerateRandomCell() {
         // Generates random x and y values within the grid boundaries
         float x = GetRandomValue(0, cellCount - 1);
         float y = GetRandomValue(0, cellCount - 1);
         return Vector2{x, y}; // Returns the generated random position
     }
-
     Vector2 GenerateRandomPos(deque<Vector2> snakeBody) {
         Vector2 position = GenerateRandomCell();
         // Ensures the generated position is not already occupied by the snake's body
@@ -275,46 +315,53 @@ public:
         }
         return position; // Returns the final unoccupied position
     }
-};
+    };
 
 class Game {
         //Game game; //Declaring the game object
         GameMenu* menu;
-public:
-    Snake snake; // Instance of the Snake class
-    Food food;   // Instance of the Food class
-    bool running = true; // Indicates if the game is running
-    int score = 0;       // The player's score
-    Sound eatSound;      // Sound for eating
-    Sound wallSound;     // Sound for hitting a wall
+    public:
+        Snake snake; // Instance of the Snake class
+        Food food;   // Instance of the Food class
+        bool running = true; // Indicates if the game is running
+        int score = 0;       // The player's score
+        //Sound eatSound;      // Sound for eating
+        Sound wallSound;     // Sound for hitting a wall
 
-    string playerName;  // to store current player's name
-    vector<PlayerData> players;
+        string playerName;  // to store current player's name
+        vector<PlayerData> players;
 
+        SpeedLevel speedLevel = SpeedLevel::SLOW; // New member for speed level
 
-
+        double GetUpdateInterval() {
+        double baseInterval = 0.2;
+        switch(speedLevel) {
+            case SpeedLevel::SLOW: baseInterval = 0.2; break;
+            case SpeedLevel::MEDIUM: baseInterval = 0.15; break;
+            case SpeedLevel::FAST: baseInterval = 0.1; break;
+            case SpeedLevel::VERY_FAST: baseInterval = 0.05; break;
+        }
+        double interval = baseInterval - (score / 1000.0);
+        return (interval > 0.05) ? interval : 0.05;
+    }
         // Setter method to set the GameMenu reference
     void SetMenu(GameMenu* menu) {
         this->menu = menu;
     }
-
     Game(): snake(), food(snake.body) {
-        InitAudioDevice(); // Initializes the audio device
-        // LoadSound("Sounds/Siren_eat.mp3"); // Load eating sound
+        //InitAudioDevice(); // Initializes the audio device
+        //LoadSound("Sounds/Siren_eat.mp3"); // Load eating sound
         wallSound = LoadSound("Sounds/Crash_wall.mp3"); // Load collision sound
     }
-
     ~Game() {
         // UnloadSound(eatSound);  // Unload eating sound
         UnloadSound(wallSound); // Unload collision sound
-        CloseAudioDevice();     // Closes the audio device
+       // CloseAudioDevice();     // Closes the audio device
     }
-
     void Draw() {
         food.Draw();  // Draws the food
         snake.Draw(); // Draws the snake
     }
-
     void Update() {
         if (running) {
             snake.Update(); // Updates the snake
@@ -323,24 +370,18 @@ public:
             CheckCollisionWithTail();  // Checks collision with tail
         }
     }
-
     void CheckCollisionWithFood() {
         if(Vector2Equals(snake.body[0], food.position)) {
             food.position = food.GenerateRandomPos(snake.body); // Regenerates food position
-            
-
-            // Change the food texture to a random one
-            food.textureIndex = GetRandomValue(0, food.textures.size() - 1);
-
-            // Play a random eating sound
-            PlaySound(food.eatSounds[GetRandomValue(0, food.eatSounds.size() - 1)]);
-
+            // Increment the texture index and loop back to the beginning if necessary
+            food.textureIndex = (food.textureIndex + 1) % food.textures.size();
             snake.addSegment = true; // Snake grows
             score += 10;            // Increases score
-
+            // Play a ordered eating sound
+            PlaySound(food.eatSounds[food.soundIndex]);
+            food.soundIndex = (food.soundIndex + 1) % food.eatSounds.size();
         }
     }
-
     void CheckCollisionWithEdges() {
         // Check for collision with the grid boundaries
         if(snake.body[0].x < 0 || snake.body[0].x >= cellCount || 
@@ -348,13 +389,12 @@ public:
             GameOver();
         }
     }
-
     void GameOver() {
         PlayerData playerData;
         playerData.name = playerName;
         playerData.score = score;
+        playerData.difficulty = speedLevel; // Save the current speed level as the difficulty
         players.push_back(playerData); // Save player's data
-
         snake.Reset(); // Reset the snake
         food.position = food.GenerateRandomPos(snake.body); // Reset food position
         running = false; // Stops the game
@@ -362,7 +402,6 @@ public:
         PlaySound(wallSound); // Play collision sound
         menu->Activate(); // Reactivates the menu at the collision WITH THE WALL OR ITSELF
     }
-
     void CheckCollisionWithTail() {
         // Check for collision with the snake's own body
         for(size_t i = 1; i < snake.body.size(); ++i) {
@@ -377,26 +416,37 @@ public:
 int main() {
     // Initialization
     cout << "Starting the game..." << endl; // Displays a start message
+
+    // Get the screen width and height
+    screenWidth = GetMonitorWidth(0);
+    screenHeight = GetMonitorHeight(0);
+    // cellCount = ...; // Calculate dynamically 
+    // Calculate cellSize based on screen size
+    cellSize = min(screenWidth, screenHeight) / cellCount;
+    // Calculate grid dimensions
+    gridWidth = cellSize * cellCount;
+    gridHeight = cellSize * cellCount;
+    // Adjust offset based on screen size
+    offset = (screenWidth - gridWidth) / 2; // Center the grid horizontally
+
     InitWindow(2 * offset + cellSize * cellCount, 2 * offset + cellSize * cellCount, "Retro Snake"); // Initializes the game window
     SetTargetFPS(60); // Sets a stable target frame rate
-
+    InitAudioDevice(); // Initializes the audio device
     GameMenu menu;
     Game game; // Creates a game instance
     game.SetMenu(&menu); // Set the GameMenu reference
-
     // Main game loop
     while (!WindowShouldClose()) { // Detects window close request
         BeginDrawing(); // Starts the drawing process
-
          if (menu.IsActive()) {
                 // Call to InputPlayerName method to get player's name
-
             menu.DisplayMenu();
             menu.HandleInput();
             if (!menu.IsActive()) {
                 backgroundColor = menu.GetBackgroundColor();
                 snakeColor = menu.GetSnakeColor();
                 game.playerName = menu.GetPlayerName();  // Pass the player's name to the Game class
+                game.speedLevel = menu.GetSpeedLevel(); // Set the selected speed level
             }
         } else {
             // Input handling for snake directions
@@ -416,32 +466,35 @@ int main() {
                 game.snake.direction = {1, 0};
                 game.running = true;
             }
-
             // Game state update
-            if (eventTriggered(0.2)) { // Checks if it's time to update the game state
+            //if (eventTriggered(0.2)) { 
+            if (eventTriggered(game.GetUpdateInterval())) {// Checks if it's time to update the game state
                 game.Update();
             }
-
             // Drawing the game elements
-            ClearBackground(backgroundColor);
-
+        ClearBackground(backgroundColor);
         DrawRectangleLinesEx(Rectangle{(float)offset - 5, (float)offset - 5, (float)cellSize * cellCount + 10, (float)cellSize * cellCount + 10}, 5, snakeColor);
         // Draw the game window borders
         DrawText("Learning Classes and algorithms by Snake ", offset-52, 20, 40, snakeColor); //Drawing the title upside middle
         DrawText(TextFormat("%i", game.score), offset+360, offset+cellSize*cellCount+10, 40, snakeColor);  //Drawing the score on the middle bottom of the screen
         game.Draw();            // Draws the game elements
-        if (!game.running) {
-            // Display player's data after the game ends
+            if (!game.running) {
+                // Display player's data after the game ends
+
+            // Modifyed your leaderboard display logic
             for (size_t i = 0; i < game.players.size(); ++i) {
-                DrawText(TextFormat("Player: %s - Score: %i", game.players[i].name.c_str(), game.players[i].score),
-                         offset + 50, offset + 50 + i * 30, 20, snakeColor);
+                string difficulty = SpeedLevelToString(game.players[i].difficulty);
+                DrawText(TextFormat("Player: %s - Score: %i - Difficulty: %s", 
+                    game.players[i].name.c_str(), 
+                    game.players[i].score, 
+                    difficulty.c_str()),
+                    offset + 50, offset + 50 + i * 30, 20, snakeColor);
             }
         }
         } // end
-
-        EndDrawing();           // Ends the drawing process
+        EndDrawing();// Ends the drawing process
     }
-
+    CloseAudioDevice(); // Close the audio device 
     CloseWindow(); // Closes the game window
     return 0;
 }
