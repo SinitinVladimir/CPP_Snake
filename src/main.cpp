@@ -245,17 +245,26 @@ class Food {
         Food(deque<Vector2> snakeBody, SpeedLevel difficulty) : currentDifficulty(difficulty) {
             // Load multiple textures
             //textures.push_back(LoadTexture("Graphics/Beluga_food1.png"));
-            textures.push_back(LoadTexture("Graphics/1.png"));
-            textures.push_back(LoadTexture("Graphics/2.png"));
-            textures.push_back(LoadTexture("Graphics/3.png"));
-            textures.push_back(LoadTexture("Graphics/4.png"));
+            textures.push_back(LoadTexture("Graphics/aa.png"));
+            textures.push_back(LoadTexture("Graphics/ab.png"));
+            textures.push_back(LoadTexture("Graphics/ac.png"));
+            for (char letterr = 'a'; letterr <= 'z'; ++letterr) {
+                std::string filename = "Graphics/" + std::string(1, letterr) + ".png";
+                textures.push_back(LoadTexture(filename.c_str()));  // Convert to C-style string
+            }
+
             // Initialize texture index
             textureIndex = GetRandomValue(0, textures.size() - 1);
             // Load multiple sounds
-            eatSounds.push_back(LoadSound("Sounds/d.mp3"));
-            eatSounds.push_back(LoadSound("Sounds/a.mp3"));
-            eatSounds.push_back(LoadSound("Sounds/b.mp3"));
-            eatSounds.push_back(LoadSound("Sounds/c.mp3"));
+            eatSounds.push_back(LoadSound("Sounds/aa.mp3"));
+            eatSounds.push_back(LoadSound("Sounds/ab.mp3"));
+            eatSounds.push_back(LoadSound("Sounds/ac.mp3"));
+            //eatSounds.push_back(LoadSound("Sounds/c.mp3"));
+            for (char letter = 'a'; letter <= 'z'; ++letter) {
+                std::string filename = "Sounds/" + std::string(1, letter) + ".mp3";
+                eatSounds.push_back(LoadSound(filename.c_str()));  // Convert to C-style string
+            }
+
             // Initialize sound index
             soundIndex = GetRandomValue(0, eatSounds.size() - 1);
             for (const auto& sound : eatSounds) {
@@ -319,21 +328,51 @@ class Game {
         string playerName; // Variable to store the current player's name.
         vector<PlayerData> players; // Vector to store data for all players (e.g., for a leaderboard).
         SpeedLevel speedLevel = SpeedLevel::SLOW; // The current speed level of the game.
-        vector<string> messages = {"Learning Classes and algorithms by Snake", "Message after first food", "Message after second food"}; // Messages to display at various points in the game.
+        vector<std::string> messages = {
+    "0. Arhitectura sistemelor de calcul",
+    "1. Fundamentele programării",
+    "2. Logică computațională",
+    "3. Algebra liniară, geometria analitică și diferențială",
+    "4. Analiza matematică",
+    "5. Educația fizică",
+    "6. Limba engleza aplicată în informatică",
+    "7. Structuri de date și algoritmi",
+    "8. Sisteme de operare",
+    "9. Algoritmica grafurilor",
+    "10. Probabilităţi şi statistică",
+    "11. Programarea interfețelor grafice WEB",
+    "12. Baze de date",
+    "13. OOP",
+    "14. Ecuații diferențiale și cu derivate parțiale",
+    "15. Algoritmi fundamentali",
+    "16. Calcul numeric",
+    "17. Software matematic",
+    "18. Rețele de calculatoare",
+    "19. Sisteme de gestiune a bazelor de date",
+    "20. Tehnici avansate de programare",
+    "21. Dezvoltarea aplicaţiilor WEB",
+    "22. Grafica pe calculator",
+    "23. Inginerie software",
+    "24. Dezvoltarea aplicaţiilor mobile",
+    "25. Inteligența artificială",
+    "26. Calcul evolutiv",
+    "27. Învăţare automată",
+    "28. Securitatea sistemelor informatice"
+}; // Messages to display at various points in the game.
         int currentMessageIndex = 0; // Index to keep track of which message is currently displayed.
 
         // Method to calculate the update interval based on speed level and score
         double GetUpdateInterval() {
-            double baseInterval = 0.2; // Default interval
+            double baseInterval = 0.22; // Default interval
             // Adjust interval based on speed level
             switch(speedLevel) {
-                case SpeedLevel::SLOW: baseInterval = 0.2; break;
-                case SpeedLevel::MEDIUM: baseInterval = 0.15; break;
-                case SpeedLevel::FAST: baseInterval = 0.1; break;
-                case SpeedLevel::VERY_FAST: baseInterval = 0.05; break;
+                case SpeedLevel::SLOW: baseInterval = 0.22; break;
+                case SpeedLevel::MEDIUM: baseInterval = 0.17; break;
+                case SpeedLevel::FAST: baseInterval = 0.14; break;
+                case SpeedLevel::VERY_FAST: baseInterval = 0.07; break;
             }
             // Adjust interval based on score
-            double interval = baseInterval - (score / 1000.0);
+            double interval = baseInterval - (score / 3000.0);
             return (interval > 0.05) ? interval : 0.05; // Ensure interval doesn't get too low.
         }
 
