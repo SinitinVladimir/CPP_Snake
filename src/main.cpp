@@ -447,11 +447,36 @@ class Game {
             }
         }
 
-        // Method to sort the leaderboard
+           // QuickSort utility functions
+        static int Partition(vector<PlayerData>& players, int low, int high) {
+            PlayerData pivot = players[high]; // Pivot element
+            int i = (low - 1); // Index of smaller element
+
+            for (int j = low; j <= high - 1; j++) {
+                // If current element is smaller than or equal to pivot
+                if (players[j].score >= pivot.score) { // Notice we use >= to sort in descending order
+                    i++; // Increment index of smaller element
+                    swap(players[i], players[j]);
+                }
+            }
+            swap(players[i + 1], players[high]);
+            return (i + 1);
+        }
+
+        static void QuickSort(vector<PlayerData>& players, int low, int high) {
+            if (low < high) {
+                // pi is partitioning index, arr[p] is now at right place
+                int pi = Partition(players, low, high);
+
+                // Separately sort elements before partition and after partition
+                QuickSort(players, low, pi - 1);
+                QuickSort(players, pi + 1, high);
+            }
+        }
+
+        // Method to sort the leaderboard using QuickSort
         void SortLeaderboard() {
-            sort(players.begin(), players.end(), [](const PlayerData& a, const PlayerData& b) {
-                return a.score > b.score; // Sort players by score in descending order.
-            });
+            QuickSort(players, 0, players.size() - 1);
         }
 
         // Method to handle game over scenarios
