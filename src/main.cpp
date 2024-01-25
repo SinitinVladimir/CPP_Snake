@@ -66,9 +66,6 @@ bool eventTriggered(double interval){
     return false; // Returns false otherwise
 }
 
-// Remaining code for classes GameMenu, Snake, Food, and Game...
-
-
 
 class GameMenu {
     private:
@@ -77,7 +74,7 @@ class GameMenu {
         int backgroundColorIndex; // Keeps track of the currently selected index for the background color.
         int snakeColorIndex; // Keeps track of the currently selected index for the snake color.
         bool mouseOnNameInputBox; // Flag to check if the mouse is hovering over the name input box.
-        int speedLevelIndex = 0; // Stores the index of the currently selected speed level.
+        int speedLevelIndex; // Stores the index of the currently selected speed level.
         Rectangle nameInputBox; // Represents the graphical area where the player inputs their name.
         string playerName; // Stores the player's name.
         vector<PlayerData> players; // Stores data for all players in the current session.
@@ -86,9 +83,10 @@ class GameMenu {
         // Constructor initializes the menu with the first color options and sets the menu as active.
         GameMenu() : active(true), backgroundColorIndex(0), snakeColorIndex(1) {
             nameInputBox = {400, 320, 325, 50}; // Sets the position and size of the name input box.
-            colorOptions = {{255, 255, 0, 255}, {255, 165, 0, 255}, {173, 204, 96, 255}, {0, 0, 0, 255}, {128, 0, 128, 255}};
+            colorOptions = {{255, 255, 0, 255}, {255, 165, 0, 255}, {173, 204, 96, 255}, 
+                            {0, 0, 0, 255}, {128, 0, 128, 255}};
         }
-
+        
         // Activates the menu.
         void Activate() { active = true; }
         
@@ -106,18 +104,18 @@ class GameMenu {
             ClearBackground(RAYWHITE); // Clears the screen and sets a white background.
             DrawText("Game Menu", 400, 50, 20, BLACK); // Displays the menu title.
             DrawText("Use arrow keys to change colors", 350, 100, 20, DARKGRAY); // Shows instructions for color selection.
-            DrawText("Background Color", 400, 150, 20, BLACK); // Label for background color selection.
-            DrawRectangle(600, 145, 20, 20, colorOptions[backgroundColorIndex]); // Shows the selected background color.
-            DrawText("Snake Color", 400, 200, 20, BLACK); // Label for snake color selection.
-            DrawRectangle(600, 195, 20, 20, colorOptions[snakeColorIndex]); // Shows the selected snake color.
+            DrawText("Background Color  <- ->", 400, 150, 20, BLACK); // Label for background color selection.
+            DrawRectangle(700, 145, 20, 20, colorOptions[backgroundColorIndex]); // Shows the selected background color.
+            DrawText("Snake Color  /\\ \\/", 400, 200, 20, BLACK); // Label for snake color selection.
+            DrawRectangle(700, 195, 20, 20, colorOptions[snakeColorIndex]); // Shows the selected snake color.
             DrawText("Enter your name: ", 400, 300, 20, BLACK); // Prompts for name input.
             DrawRectangleRec(nameInputBox, LIGHTGRAY); // Renders the name input box.
             DrawRectangleLines((int)nameInputBox.x, (int)nameInputBox.y, (int)nameInputBox.width, (int)nameInputBox.height, DARKGRAY); // Draws the outline for the input box.
             DrawText(playerName.c_str(), (int)nameInputBox.x + 5, (int)nameInputBox.y + 8, 40, MAROON); // Displays the entered name.
             DrawText("Press ENTER to start", 400, 500, 20, DARKBLUE); // Indicates how to start the game.
-            DrawText("Speed Level < >", 400, 250, 20, BLACK); // Label for speed level selection.
+            DrawText("Speed Level PRESS < >", 400, 250, 20, BLACK); // Label for speed level selection.
             const char* speedLevels[] = {"Slow", "Medium", "Fast", "Very Fast"}; // Speed level options.
-            DrawText(speedLevels[speedLevelIndex], 600, 245, 20, BLACK); // Displays the selected speed level.
+            DrawText(speedLevels[speedLevelIndex], 700, 245, 20, BLACK); // Displays the selected speed level.
         }
 
         // Handles user input for the menu.
@@ -200,7 +198,7 @@ class Snake {
         // Method to draw the snake on the screen.
         void Draw() {
             // Iterates through each segment in the snake's body.
-            for(long unsigned int i = 0; i < body.size(); i++) {
+            for(unsigned int i = 0; i < body.size(); i++) {
                 // Creates a rectangle to visually represent each segment.
                 Rectangle segment = Rectangle{
                     offset + body[i].x * cellSize, // X position
@@ -209,7 +207,7 @@ class Snake {
                     (float)cellSize               // Height
                 };
                 // Draws the segment as a rounded rectangle using the snake's color.
-                DrawRectangleRounded(segment, 0.5, 6, snakeColor);
+                DrawRectangleRounded(segment, 0.2, 50, snakeColor); //0.0 - 1.0 roundnes level 4 - 99999 segments of the rounded rectangle
             }
         }
         // Method to update the snake's state, including its position and size.
@@ -235,12 +233,12 @@ class Snake {
 
 class Food {
     private:
-        SpeedLevel currentDifficulty;
     public:
+        SpeedLevel currentDifficulty;
         Vector2 position;    // Stores the position of the food
-        std::vector<Texture2D> textures; // Updated to store multiple textures
+        vector<Texture2D> textures; // Updated to store multiple textures
         int textureIndex; // Index to keep track of the current texture
-        std::vector<Sound> eatSounds; // Updated to store multiple sounds
+        vector<Sound> eatSounds; // Updated to store multiple sounds
         int soundIndex; // Index to keep track of the current sound
         Food(deque<Vector2> snakeBody, SpeedLevel difficulty) : currentDifficulty(difficulty) {
             // Load multiple textures
@@ -249,24 +247,26 @@ class Food {
             textures.push_back(LoadTexture("Graphics/ab.png"));
             textures.push_back(LoadTexture("Graphics/ac.png"));
             for (char letterr = 'a'; letterr <= 'z'; ++letterr) {
-                std::string filename = "Graphics/" + std::string(1, letterr) + ".png";
+                string filename = "Graphics/" + string(1, letterr) + ".png";
                 textures.push_back(LoadTexture(filename.c_str()));  // Convert to C-style string
             }
 
             // Initialize texture index
-            textureIndex = GetRandomValue(0, textures.size() - 1);
+            textureIndex = 0;
+            //GetRandomValue(0, textures.size() - 1);
             // Load multiple sounds
             eatSounds.push_back(LoadSound("Sounds/aa.mp3"));
             eatSounds.push_back(LoadSound("Sounds/ab.mp3"));
             eatSounds.push_back(LoadSound("Sounds/ac.mp3"));
             //eatSounds.push_back(LoadSound("Sounds/c.mp3"));
             for (char letter = 'a'; letter <= 'z'; ++letter) {
-                std::string filename = "Sounds/" + std::string(1, letter) + ".mp3";
+                string filename = "Sounds/" + string(1, letter) + ".mp3";
                 eatSounds.push_back(LoadSound(filename.c_str()));  // Convert to C-style string
             }
 
             // Initialize sound index
-            soundIndex = GetRandomValue(0, eatSounds.size() - 1);
+            soundIndex = 0;
+            //GetRandomValue(0, eatSounds.size() - 1);
             for (const auto& sound : eatSounds) {
                 if (sound.stream.buffer == nullptr) {
                     // Display a message indicating that the sound failed to load
@@ -289,17 +289,21 @@ class Food {
             // Draw the current texture at the specified position
             DrawTexture(textures[textureIndex], offset + position.x * cellSize, offset + position.y * cellSize, Fade(WHITE, 0.5f)); // 
         }
-        Vector2 GenerateRandomCell() { //UPDT difficulty level
+        int GetMinDistance() { //UPDT difficulty level
         int minDistance;
         switch (currentDifficulty) {
-            case SpeedLevel::SLOW:       minDistance = 4; break;
-            case SpeedLevel::MEDIUM:     minDistance = 3; break;
-            case SpeedLevel::FAST:       minDistance = 2; break;
-            case SpeedLevel::VERY_FAST:  minDistance = 1; break;
-            default:                     minDistance = 1;
+                case SpeedLevel::SLOW:       minDistance = 4; break;
+                case SpeedLevel::MEDIUM:     minDistance = 3; break;
+                case SpeedLevel::FAST:       minDistance = 2; break;
+                case SpeedLevel::VERY_FAST:  minDistance = 1; break;
+                default:                     minDistance = 1;
+            }
+            return minDistance;
         }
-        float x = GetRandomValue(minDistance, cellCount - 1 - minDistance);
-        float y = GetRandomValue(minDistance, cellCount - 1 - minDistance);
+        Vector2 GenerateRandomCell() { //UPDT difficulty level
+            int minDistance = GetMinDistance();
+            float x = GetRandomValue(minDistance, cellCount - 1 - minDistance);
+            float y = GetRandomValue(minDistance, cellCount - 1 - minDistance);
         return Vector2{x, y};
         }
         Vector2 GenerateRandomPos(deque<Vector2> snakeBody) {
@@ -310,16 +314,17 @@ class Food {
             }
             return position; // Returns the final unoccupied position
         }
+
     };
 
 class Game {
     // Private member variables
     GameMenu* menu; // Pointer to the game menu, for accessing and modifying menu state.
     bool difficultyHasChanged; // Flag to track if the game's difficulty level has changed.
-    SpeedLevel newDifficulty; // Stores the new difficulty level when a change is requested.
 
     // Public member variables and methods
     public:
+    SpeedLevel newDifficulty; // Stores the new difficulty level when a change is requested.
         Snake snake; // An instance of the Snake class, representing the player-controlled snake.
         Food food;   // An instance of the Food class, representing the food in the game.
         bool running = true; // Flag indicating whether the game is currently running.
@@ -327,37 +332,37 @@ class Game {
         Sound wallSound; // Sound effect for when the snake hits a wall.
         string playerName; // Variable to store the current player's name.
         vector<PlayerData> players; // Vector to store data for all players (e.g., for a leaderboard).
-        SpeedLevel speedLevel = SpeedLevel::SLOW; // The current speed level of the game.
-        vector<std::string> messages = {
-    "0. Arhitectura sistemelor de calcul",
-    "1. Fundamentele programării",
-    "2. Logică computațională",
-    "3. Algebra liniară, geometria analitică și diferențială",
-    "4. Analiza matematică",
-    "5. Educația fizică",
-    "6. Limba engleza aplicată în informatică",
-    "7. Structuri de date și algoritmi",
-    "8. Sisteme de operare",
-    "9. Algoritmica grafurilor",
-    "10. Probabilităţi şi statistică",
-    "11. Programarea interfețelor grafice WEB",
-    "12. Baze de date",
-    "13. OOP",
-    "14. Ecuații diferențiale și cu derivate parțiale",
-    "15. Algoritmi fundamentali",
-    "16. Calcul numeric",
-    "17. Software matematic",
-    "18. Rețele de calculatoare",
-    "19. Sisteme de gestiune a bazelor de date",
-    "20. Tehnici avansate de programare",
-    "21. Dezvoltarea aplicaţiilor WEB",
-    "22. Grafica pe calculator",
-    "23. Inginerie software",
-    "24. Dezvoltarea aplicaţiilor mobile",
-    "25. Inteligența artificială",
-    "26. Calcul evolutiv",
-    "27. Învăţare automată",
-    "28. Securitatea sistemelor informatice"
+        SpeedLevel speedLevel;// = SpeedLevel::SLOW; // The current speed level of the game.
+        vector<string> messages = {
+            "0. Arhitectura sistemelor de calcul",
+                "1. Fundamentele programarii",
+                "2. Logica computationala",
+                "3. Algebra liniara, geometria analitica si diferentiala",
+                "4. Analiza matematica",
+                "5. Educatia fizica",
+                "6. Limba engleza aplicata in informatica",
+                "7. Structuri de date si algoritmi",
+                "8. Sisteme de operare",
+                "9. Algoritmica grafurilor",
+                "10. Probabilitati si statistica",
+                "11. Programarea interfetelor grafice WEB",
+                "12. Baze de date",
+                "13. OOP",
+                "14. Ecuatii diferentiale si cu derivate partiale",
+                "15. Algoritmi fundamentali",
+                "16. Calcul numeric",
+                "17. Software matematic",
+                "18. Retele de calculatoare",
+                "19. Sisteme de gestiune a bazelor de date",
+                "20. Tehnici avansate de programare",
+                "21. Dezvoltarea aplicatiilor WEB",
+                "22. Grafica pe calculator",
+                "23. Inginerie software",
+                "24. Dezvoltarea aplicatiilor mobile",
+                "25. Inteligenta artificiala",
+                "26. Calcul evolutiv",
+                "27. Invatare automata",
+                "28. Securitatea sistemelor informatice"
 }; // Messages to display at various points in the game.
         int currentMessageIndex = 0; // Index to keep track of which message is currently displayed.
 
@@ -394,7 +399,7 @@ class Game {
         }
 
         // Constructor for the Game class
-        Game() : snake(), food(snake.body, speedLevel), difficultyHasChanged(false), newDifficulty(SpeedLevel::SLOW) {
+        Game() : snake(), food(snake.body, speedLevel), difficultyHasChanged(), newDifficulty() {
             wallSound = LoadSound("Sounds/Crash_wall.mp3"); // Load the sound for hitting a wall.
         }
 
@@ -407,6 +412,8 @@ class Game {
         void Draw() {
             food.Draw();  // Draw the food.
             snake.Draw(); // Draw the snake.
+            // Afiseaza minDistance DEBUGGING
+            DrawText(TextFormat("Min Distance: %i", food.GetMinDistance()), offset+30, offset+cellSize*cellCount+10, 40, snakeColor);
         }
 
         // Method to update the game state
