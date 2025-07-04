@@ -517,15 +517,18 @@ int main() {
     // Initialize the audio system for playing sounds
     InitAudioDevice();
 
-    // Create instances of the GameMenu and Game classes
-    GameMenu menu;
-    Game game;
+    // Wrap game objects in a scope so that they are destroyed
+    // before the audio device is closed at the end of main
+    {
+        // Create instances of the GameMenu and Game classes
+        GameMenu menu;
+        Game game;
 
-    // Pass the address of 'menu' to 'game' so it can interact with the menu
-    game.SetMenu(&menu);
+        // Pass the address of 'menu' to 'game' so it can interact with the menu
+        game.SetMenu(&menu);
 
-    // Main game loop - continues until the window close event is triggered
-    while (!WindowShouldClose()) {
+        // Main game loop - continues until the window close event is triggered
+        while (!WindowShouldClose()) {
         // Start drawing graphics
         BeginDrawing();
 
@@ -584,8 +587,9 @@ int main() {
         // End the drawing process
         EndDrawing();
     }
-
-    // Cleanup resources before closing
+    // Objects 'menu' and 'game' are destroyed here
+    
+    // Cleanup resources after objects have released their audio data
     CloseAudioDevice();
     CloseWindow();
     return 0;
